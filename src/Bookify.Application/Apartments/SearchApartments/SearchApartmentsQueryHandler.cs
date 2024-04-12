@@ -2,8 +2,10 @@
 using Bookify.Application.Abstractions.Data;
 using Bookify.Application.Abstractions.Messaging;
 using Bookify.Domain.Abstractions;
+using Bookify.Domain.Apartments;
 using Bookify.Domain.Bookings;
 using Dapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bookify.Application.Apartments.SearchApartments;
 
@@ -46,7 +48,8 @@ internal sealed class SearchApartmentsQueryHandler
                 a.address_city AS City,
                 a.address_street AS Street
             FROM apartments AS a
-            WHERE NOT EXISTS
+            WHERE (Name LIKE '%' || COALESCE(@SearchTerm, '') || '%' OR Description LIKE '%' || COALESCE(@SearchTerm, '') || '%') AND
+            NOT EXISTS
             (
                 SELECT 1
                 FROM bookings AS b
@@ -56,7 +59,21 @@ internal sealed class SearchApartmentsQueryHandler
                     b.duration_end >= @StartDate AND
                     b.status = ANY(@ActiveBookingStatuses)
             )
+            ORDER BY Price DESC
+            OFFSET @Page ROWS FETCH NEXT @PageSize ROWS ONLY
             """;
+
+		string keySelector = request.KeySelector switch
+        {
+            "price" => "Price",
+            "name" => "a.Name",
+            _ => "Id" 
+        };
+        string sortDirection = request.SortDirection switch
+        {
+            "desc" => "DESC",
+            _ => "ASC"
+        };
 
         IEnumerable<ApartmentResponse> apartments = await connection
             .QueryAsync<ApartmentResponse, AddressResponse, ApartmentResponse>(
@@ -69,9 +86,14 @@ internal sealed class SearchApartmentsQueryHandler
                 },
                 new
                 {
+                    request.SearchTerm,
                     request.StartDate,
                     request.EndDate,
-                    ActiveBookingStatuses
+                    ActiveBookingStatuses,
+                    KeySelector = keySelector,
+                    SortDirection = sortDirection,
+                    Page = (request.Page - 1) * request.PageSize,
+                    request.PageSize
                 },
                 splitOn: "Country");
 

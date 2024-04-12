@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Bookify.Application.Abstractions.Common;
 using Bookify.Application.Apartments.SearchApartments;
 using Bookify.Domain.Abstractions;
 using MediatR;
@@ -22,13 +23,36 @@ public class ApartmentsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> SearchApartments(
+        string? searchTerm,
+        string? sortColumn,
+        string? sortOrder,
         DateOnly startDate,
         DateOnly endDate,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        var query = new SearchApartmentsQuery(startDate, endDate);
+        var query = new SearchApartmentsQuery(searchTerm, sortColumn, sortOrder, startDate, endDate, page, pageSize);
 
         Result<IReadOnlyList<ApartmentResponse>> result = await _sender.Send(query, cancellationToken);
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("WithEf")]
+    public async Task<IActionResult> SearchApartmentsWithEf(
+        string? searchTerm,
+        string? sortColumn,
+        string? sortOrder,
+        DateOnly startDate,
+        DateOnly endDate,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = new SearchApartmentsWithEfQuery(searchTerm, sortColumn, sortOrder, startDate, endDate, page, pageSize);
+
+        Result<PagedList<ApartmentResponse>> result = await _sender.Send(query, cancellationToken);
 
         return Ok(result.Value);
     }

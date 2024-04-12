@@ -7,7 +7,7 @@ namespace Bookify.Application.Abstractions.Behaviors;
 
 internal sealed class ValidationBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IBaseCommand
+    where TRequest : IRequest<TResponse>
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 

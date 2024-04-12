@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+﻿using Application.Data;
+using Asp.Versioning;
 using Bookify.Application.Abstractions.Authentication;
 using Bookify.Application.Abstractions.Caching;
 using Bookify.Application.Abstractions.Clock;
@@ -77,7 +78,10 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
-        services.AddSingleton<ISqlConnectionFactory>(_ =>
+		services.AddScoped<IApplicationDbContext>(sp =>
+	        sp.GetRequiredService<ApplicationDbContext>());
+
+		services.AddSingleton<ISqlConnectionFactory>(_ =>
             new SqlConnectionFactory(connectionString));
 
         SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());

@@ -1,13 +1,18 @@
-﻿using Bookify.Application.Abstractions.Clock;
+﻿using Application.Data;
+using Bookify.Application.Abstractions.Clock;
 using Bookify.Application.Exceptions;
 using Bookify.Domain.Abstractions;
+using Bookify.Domain.Apartments;
+using Bookify.Domain.Bookings;
+using Bookify.Domain.Reviews;
+using Bookify.Domain.Users;
 using Bookify.Infrastructure.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace Bookify.Infrastructure;
 
-public sealed class ApplicationDbContext : DbContext, IUnitOfWork
+public sealed class ApplicationDbContext : DbContext, IApplicationDbContext, IUnitOfWork
 {
     private static readonly JsonSerializerSettings JsonSerializerSettings = new()
     {
@@ -30,8 +35,15 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
 
         base.OnModelCreating(modelBuilder);
     }
+	public DbSet<Apartment> Apartments { get; set; }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+	public DbSet<Booking> Bookings { get; set; }
+
+	public DbSet<Review> Reviews { get; set; }
+
+	public DbSet<User> Users { get; set; }
+
+	public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
